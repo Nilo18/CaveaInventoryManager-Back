@@ -3,8 +3,15 @@ require("dotenv").config()
 const sequelize = require('./db/config.ts')
 const express = require('express')
 const app = express()
+const cors = require('cors')
+const InventoryRouter = require('./routes/InventoryRoute.ts')
 
 app.use(express.json())
+app.use(cors({
+    origin: ['http://localhost:4200']
+}))
+app.use('/inventories', InventoryRouter)
+
 
 app.get('/', (req: Request, res: Response, next: NextFunction) => {
     try {

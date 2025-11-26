@@ -1,21 +1,24 @@
 import { DataTypes, Model, Optional } from "sequelize"
-const { sequelize } = require('../config.ts')
+const sequelize = require('../config.ts')
+const Location = require('./Location.ts')
 
-interface ItemAttributes {
+interface InventoryAttributes {
     id: number
-    name: string,
+    name: string
     price: number
-    createdAt?: Date,
+    locationId: number
+    createdAt?: Date
     updatedAt?: Date
 }
 
 // Make id optional since the database generates it automatically
-interface ItemCreationAttributes extends Optional<ItemAttributes, 'id'> {}
+interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'id'> {}
 
-class Inventory extends Model<ItemAttributes, ItemCreationAttributes> implements ItemAttributes {
+class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> implements InventoryAttributes {
     public id!: number
     public name!: string
     public price!: number
+    public locationId!: number
 
     public readonly createdAt?: Date
     public readonly updatedAt?: Date
@@ -23,7 +26,8 @@ class Inventory extends Model<ItemAttributes, ItemCreationAttributes> implements
 
 Inventory.init({
     id: {
-        type: DataTypes.INTEGER.UNSIGNED,
+        type: DataTypes.INTEGER,
+        autoIncrement: true, // Let Postgre automatically generate new numbers for ids
         allowNull: false,
         primaryKey: true
     },
@@ -34,8 +38,17 @@ Inventory.init({
     },
 
     price: {
-        type: DataTypes.INTEGER.UNSIGNED,
+        type: DataTypes.INTEGER,
         allowNull: false
+    },
+
+    locationId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: "Location",
+            key: "id"
+        }
     }
 }, 
 {
@@ -44,4 +57,4 @@ Inventory.init({
     timestamps: true
 })
 
-export default Inventory
+module.exports = Inventory
