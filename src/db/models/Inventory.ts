@@ -38,7 +38,7 @@ Inventory.init({
     },
 
     price: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.DOUBLE,
         allowNull: false
     },
 

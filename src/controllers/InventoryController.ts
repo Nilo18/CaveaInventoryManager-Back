@@ -19,6 +19,7 @@ async function getInventory(req: Request, res: Response, next: NextFunction) {
         console.log("The offset is: " + offset)
 
         const where: any = {}
+        
         if (filter && filter !== 'ყველა') {
             where['$location.name$'] = filter
         }
@@ -41,6 +42,7 @@ async function getInventory(req: Request, res: Response, next: NextFunction) {
         action()
         
         console.log(order)
+
         const items = await Inventory.findAll({
             include: [{
                 model: Location, 
@@ -54,15 +56,78 @@ async function getInventory(req: Request, res: Response, next: NextFunction) {
             offset,
         })
         console.log('The amount of Items is: ' + items.length)
-        for (let item of items) {
-            console.log(item.id)
-        }
+        // for (let item of items) {
+        //     console.log(item.id)
+        // }
 
-        return res.status(200).json(items)
+        // Count the amount of rows to determine the total amount of pages for this request
+        let pageCount = 0
+        const totalRows = await Inventory.count({
+            include: [{
+                model: Location,
+                as: 'location',
+                required: true,
+                attributes: [] // This won't select any rows unnecessarily
+            }],
+            where,
+            distinct: true,
+            col: Inventory.id
+        })
+
+        console.log("Total amount of rows are: " + totalRows)
+        // Since each page contains 20 rows, the amount of pages will increase by 1 for every 20th row
+        for (let i = 0; i < totalRows; i++) {
+            if (i % 20 === 0) {
+                // console.log("The multiple of 20 row is: " + totalRows[i])
+                pageCount++
+            }
+        }
+        console.log("The page count is: " + pageCount)
+        res.status(200).json({items, pageCount})
     } catch (error) {
         return res.status(500).send(`Couldn't GET inventory: ${error}`)
     }
-    // next()
+    next()
 }
 
-module.exports = { getInventory }
+async function addInventory(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { name, price, location } = req.body
+        // The frontend will handle the validation but these checks are for safety measures
+        if (!name) {
+            return res.status(401).send("Please provide the name of the item.")
+        }
+
+        if (!price) {
+            return res.status(401).send("Please provide the price of the item.")
+        }
+
+        if (!location) {
+            return res.status(401).send("Please provide the location of the item.")
+        }
+
+        const suggestedLocation = await Location.findOne({
+            where: { name: location }
+        })
+
+        if (!suggestedLocation) {
+            return res.status(404).send("The given location was not found to add the item.")
+        }
+
+        console.log("The location found is: " + suggestedLocation)
+
+        const newItem = await Inventory.create({
+            name: name,
+            price: price,
+            locationId: suggestedLocation.id
+        })
+
+        console.log("The new item is: " + newItem)
+        res.status(200).json(newItem)
+    } catch (error) {
+        return res.status(500).send(`Couldn't add new inventory: ${error}`)
+    }
+    next()
+}
+
+module.exports = { getInventory, addInventory }
