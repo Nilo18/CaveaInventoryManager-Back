@@ -19,7 +19,7 @@ async function getInventory(req: Request, res: Response, next: NextFunction) {
         console.log("The offset is: " + offset)
 
         const where: any = {}
-        
+
         if (filter && filter !== 'ყველა') {
             where['$location.name$'] = filter
         }
@@ -130,4 +130,21 @@ async function addInventory(req: Request, res: Response, next: NextFunction) {
     next()
 }
 
-module.exports = { getInventory, addInventory }
+async function removeInventory(req: Request, res: Response, next: NextFunction) {
+    try {
+        const { inventoryID } = req.params
+        const deletedCount = await Inventory.destroy({
+            where: {id: inventoryID}
+        })
+
+        if (deletedCount === 0) {
+            return res.status(404).send('Item with the given id was not found.')
+        }
+
+        res.status(200).json({success: true, deletedAmount: deletedCount})
+    } catch (error) {
+        return res.status(500).send(`Couldn't remove the item: ${error}`)
+    }
+}
+
+module.exports = { getInventory, addInventory, removeInventory }
