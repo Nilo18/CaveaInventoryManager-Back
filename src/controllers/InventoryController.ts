@@ -145,6 +145,7 @@ async function removeInventory(req: Request, res: Response, next: NextFunction) 
     } catch (error) {
         return res.status(500).send(`Couldn't remove the item: ${error}`)
     }
+    next()
 }
 
 module.exports = { getInventory, addInventory, removeInventory }

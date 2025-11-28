@@ -5,11 +5,14 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const InventoryRouter = require('./routes/InventoryRoute.ts')
+const LocationRouter = require('./routes/LocationRoute.ts')
 
 app.use(express.json())
 app.use(cors({
     origin: ['http://localhost:4200']
 }))
+
+app.use('/locations', LocationRouter)
 app.use('/inventories', InventoryRouter)
 
 
