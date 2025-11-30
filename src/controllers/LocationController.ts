@@ -2,32 +2,35 @@ import type { Request, Response, NextFunction } from "express";
 import { Sequelize } from "sequelize";
 const { Location, Inventory } = require('../db/models/associations.ts')
 
+async function getLocationStatsService() {
+        const stats = await Location.findAll({
+        attributes: [
+            'id',
+            'name',
+            [Sequelize.fn('COUNT', Sequelize.col('inventories.id')), 'totalItems'],
+            [Sequelize.fn('SUM', Sequelize.col('inventories.price')), 'totalPrice']
+        ],
+        include: [{ 
+            model: Inventory,
+            as: 'inventories',
+            attributes: []
+        }],
+        group: ['Location.id'],
+        raw: true
+    })
+
+    stats.forEach((location: any) => {
+        location.totalItems = Number(location.totalItems) // Convert total items to number since they're returned as string
+        // Round the total priice to show 2 digits of floating point numbers
+        location.totalPrice = Number(location.totalPrice) ? Math.round(location.totalPrice * 100) / 100 :  0
+    })
+    return stats
+}
+
 async function getLocationStats(req: Request, res: Response, next: NextFunction) {
     try {
-        const stats = await Location.findAll({
-            attributes: [
-                'id',
-                'name',
-                [Sequelize.fn('COUNT', Sequelize.col('inventories.id')), 'totalItems'],
-                [Sequelize.fn('SUM', Sequelize.col('inventories.price')), 'totalPrice']
-            ],
-            include: [{
-                model: Inventory,
-                as: 'inventories',
-                attributes: []
-            }],
-            group: ['Location.id'],
-            raw: true
-        })
 
-        stats.forEach((location: any) => {
-            location.totalItems = Number(location.totalItems) // Convert total items to number since they're returned as string
-            // Round the total priice to show 2 digits of floating point numbers
-            // This will avoid large decimals like 540.34999999 which looks less professional
-            location.totalPrice = Number(location.totalPrice) ? Math.round(location.totalPrice * 100) / 100 :  0
-        })
-
-        // console.log("The stats are: ", stats)
+        const stats = await getLocationStatsService();
         res.status(200).json({locations: stats})
     } catch (error) {
         return res.status(500).send(`Couldn't get locations: ${error}`)
@@ -55,7 +58,8 @@ async function addLocation(req: Request, res: Response, next: NextFunction) {
             name: name
         })
 
-        res.status(200).json(newLocation)
+        const stats = await getLocationStatsService();
+        res.status(200).json({locations: stats})
     } catch (error) {
         return res.status(500).send(`Couldn't add the location: ${error}`)
     }
@@ -75,14 +79,16 @@ async function updateLocation(req: Request, res: Response, next: NextFunction) {
         }
 
         const suggestedLocation = await Location.findByPk(id)
-        
+
         if (!suggestedLocation) {
             return res.status(404).send("The suggested location was not found.")
         }
 
         await suggestedLocation.update({ name: newName })
 
-        res.status(200).json(suggestedLocation)
+        const stats = await getLocationStatsService();
+
+        res.status(200).json({locations: stats})
     } catch (error) {
         return res.status(500).send(`Couldn't update the location ${error}`)
     }
@@ -101,7 +107,8 @@ async function deleteLocation(req: Request, res: Response, next: NextFunction) {
             return res.status(401).send("Couldn't delete, Location with this id doesn't exist.")
         }
 
-        res.status(200).json({success: true, deletedAmount: deletedCount})
+        const stats = await getLocationStatsService();
+        res.status(200).json({locations: stats})
     } catch (error) {
         return res.status(500).send(`Couldn't delete location: ${error}`)
     }

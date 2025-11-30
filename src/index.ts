@@ -9,20 +9,11 @@ const LocationRouter = require('./routes/LocationRoute.ts')
 
 app.use(express.json())
 app.use(cors({
-    origin: ['http://localhost:4200']
+    origin: ['http://localhost:4200', 'https://cavea-inventory-manager.vercel.app/']
 }))
 
 app.use('/locations', LocationRouter)
 app.use('/inventories', InventoryRouter)
-
-
-app.get('/', (req: Request, res: Response, next: NextFunction) => {
-    try {
-        return res.status(200).send("Hello")
-    } catch (error) {
-        return res.status(500).send(`Couldn't respond: ${error}`)
-    }
-})
 
 async function connect() {
     try {

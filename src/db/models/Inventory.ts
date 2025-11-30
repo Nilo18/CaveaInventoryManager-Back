@@ -11,7 +11,6 @@ interface InventoryAttributes {
     updatedAt?: Date
 }
 
-// Make id optional since the database generates it automatically
 interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'id'> {}
 
 class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> implements InventoryAttributes {
@@ -27,7 +26,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> 
 Inventory.init({
     id: {
         type: DataTypes.INTEGER,
-        autoIncrement: true, // Let Postgre automatically generate new numbers for ids
+        autoIncrement: true, 
         allowNull: false,
         primaryKey: true
     },
@@ -46,9 +45,10 @@ Inventory.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: "Location",
+            model: "location",
             key: "id"
-        }
+        },
+        onDelete: 'CASCADE',
     }
 }, 
 {
